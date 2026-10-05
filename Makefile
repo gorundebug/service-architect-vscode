@@ -1,0 +1,9 @@
+DEPENDENCY_DOCKER_REGISTRY ?= docker.io
+NPM_CONFIG_REGISTRY ?= https://registry.npmjs.org/
+
+.PHONY: docker-build
+docker-build:
+	docker build \
+		--build-arg BUILD_IMAGE=$(DEPENDENCY_DOCKER_REGISTRY)/library/node:24.13.0-bookworm-slim \
+		--build-arg NPM_CONFIG_REGISTRY=$(NPM_CONFIG_REGISTRY) \
+		--output type=local,dest=dist .

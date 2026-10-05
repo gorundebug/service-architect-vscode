@@ -1,0 +1,48 @@
+{
+  "name": "service-architect-vscode",
+  "displayName": "Service Architect",
+  "description": "Read-only Service Architect graph navigation for typed Python projects",
+  "version": "0.1.0",
+  "publisher": "gorundebug",
+  "license": "MIT",
+  "engines": { "vscode": "^1.92.0" },
+  "main": "./extension.js",
+  "activationEvents": ["onCommand:serviceArchitect.openGraph", "onCommand:serviceArchitect.materializeDsl", "onCommand:serviceArchitect.generateProject"],
+  "contributes": {
+    "commands": [
+      { "command": "serviceArchitect.openGraph", "title": "Service Architect: Open Python Graph" },
+      { "command": "serviceArchitect.materializeDsl", "title": "Service Architect: Materialize Effective Python DSL" },
+      { "command": "serviceArchitect.generateProject", "title": "Service Architect: Generate and Merge Project" }
+    ],
+    "menus": {
+      "explorer/context": [
+        { "command": "serviceArchitect.openGraph", "when": "resourceFilename == project.yaml", "group": "navigation" },
+        { "command": "serviceArchitect.materializeDsl", "when": "resourceFilename == project.yaml", "group": "navigation" },
+        { "command": "serviceArchitect.generateProject", "when": "resourceFilename == project.yaml", "group": "navigation" }
+      ]
+    },
+    "configuration": {
+      "title": "Service Architect",
+      "properties": {
+        "serviceArchitect.saDslCommand": {
+          "type": "string",
+          "default": "sa-dsl",
+          "description": "Executable for the installed sa-python-dsl CLI (an absolute path or a command on PATH)."
+        },
+        "serviceArchitect.generatedProjectDirectory": {
+          "type": "string", "default": "dist/generated-project",
+          "description": "Default destination for generated project code and ServiceGen merge."
+        },
+        "serviceArchitect.materializedDslDirectory": {
+          "type": "string", "default": "python-dsl",
+          "description": "Default destination for the reviewable effective Python DSL."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "test": "node --test",
+    "check": "node --check extension.js && node --check media/host-vscode.js && npm test"
+  },
+  "files": ["extension.js", "host.js", "media", "README.md", "LICENSE"]
+}
