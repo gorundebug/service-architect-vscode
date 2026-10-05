@@ -5,6 +5,10 @@
   "version": "0.1.0",
   "publisher": "gorundebug",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gorundebug/service-architect-vscode.git"
+  },
   "engines": { "vscode": "^1.92.0" },
   "main": "./extension.js",
   "activationEvents": ["onCommand:serviceArchitect.openGraph", "onCommand:serviceArchitect.materializeDsl", "onCommand:serviceArchitect.generateProject"],
