@@ -11,6 +11,11 @@ then run **Service Architect: Open Python Graph** from the command palette. If t
 workspace has multiple projects, choose one. A click on a graph node or link opens the
 matching Python expression. Saving Python files refreshes the read-only graph.
 
+Right-click a node (or use Shift+F10 / the Context Menu key on the selected node)
+for **Python Code**, **Show Component** and **Show Pipeline**. The latter actions
+appear only for actual membership and focus the same scopes as the viewer's
+Components and Pipelines panels. They do not change the Python model.
+
 Right-click `.service-architect/project.yaml` for **Materialize Effective Python DSL**
 or **Generate and Merge Project**. The first command evaluates Python, round-trips via
 canonical YAML, and writes a reviewable snapshot to `python-dsl/model/` without
@@ -36,5 +41,5 @@ in VS Code's Extension Development Host.
 `service_architect_vue3/embedded`; use `sa-python-dsl/scripts/sync_ide_assets.py`
 after building a new immutable UI version. Run it with `--check` before packaging to
 verify that both IDE plugins contain that exact build. If the viewer is built in a
-separate release checkout, pass `--source-dir /path/to/public/mcp-ui/0.1.10` to both
+separate release checkout, pass `--source-dir /path/to/public/mcp-ui/0.1.11` to both
 sync and check. Do not edit the bundles directly.
