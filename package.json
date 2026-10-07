@@ -2,7 +2,7 @@
   "name": "service-architect-vscode",
   "displayName": "Service Architect",
   "description": "Read-only Service Architect graph navigation for typed Python projects",
-  "version": "0.1.0",
+  "version": "0.1.6",
   "publisher": "gorundebug",
   "license": "MIT",
   "repository": {
@@ -11,15 +11,20 @@
   },
   "engines": { "vscode": "^1.92.0" },
   "main": "./extension.js",
-  "activationEvents": ["onCommand:serviceArchitect.openGraph", "onCommand:serviceArchitect.materializeDsl", "onCommand:serviceArchitect.generateProject"],
+  "extensionKind": ["workspace"],
+  "activationEvents": ["onCommand:serviceArchitect.createProject", "onCommand:serviceArchitect.importProject", "onCommand:serviceArchitect.openGraph", "onCommand:serviceArchitect.materializeDsl", "onCommand:serviceArchitect.generateProject", "onCommand:serviceArchitect.configureGeneration"],
   "contributes": {
     "commands": [
+      { "command": "serviceArchitect.configureGeneration", "title": "Service Architect: Configure Generator Access (.env)" },
+      { "command": "serviceArchitect.createProject", "title": "Service Architect: Create Project" },
+      { "command": "serviceArchitect.importProject", "title": "Service Architect: Import Project from YAML" },
       { "command": "serviceArchitect.openGraph", "title": "Service Architect: Open Python Graph" },
       { "command": "serviceArchitect.materializeDsl", "title": "Service Architect: Materialize Effective Python DSL" },
-      { "command": "serviceArchitect.generateProject", "title": "Service Architect: Generate and Merge Project" }
+      { "command": "serviceArchitect.generateProject", "title": "Service Architect: Generate and Merge Project", "enablement": "!serviceArchitect.generationRunning" }
     ],
     "menus": {
       "explorer/context": [
+        { "command": "serviceArchitect.configureGeneration", "when": "resourceFilename == project.yaml", "group": "navigation" },
         { "command": "serviceArchitect.openGraph", "when": "resourceFilename == project.yaml", "group": "navigation" },
         { "command": "serviceArchitect.materializeDsl", "when": "resourceFilename == project.yaml", "group": "navigation" },
         { "command": "serviceArchitect.generateProject", "when": "resourceFilename == project.yaml", "group": "navigation" }
@@ -34,8 +39,8 @@
           "description": "Executable for the installed sa-python-dsl CLI (an absolute path or a command on PATH)."
         },
         "serviceArchitect.generatedProjectDirectory": {
-          "type": "string", "default": "dist/generated-project",
-          "description": "Default destination for generated project code and ServiceGen merge."
+          "type": "string", "default": "",
+          "description": "Override the destination relative to the SA project, or leave empty to use generation.outputDirectory from its manifest. Newly created projects generate into the IDE workspace root."
         },
         "serviceArchitect.materializedDslDirectory": {
           "type": "string", "default": "python-dsl",
@@ -46,7 +51,7 @@
   },
   "scripts": {
     "test": "node --test",
-    "check": "node --check extension.js && node --check media/host-vscode.js && npm test"
+    "check": "node --check extension.js && node --check cli-environment.js && node --check media/host-vscode.js && npm test"
   },
-  "files": ["extension.js", "host.js", "media", "README.md", "LICENSE"]
+  "files": ["extension.js", "host.js", "cli-environment.js", "resources/sa-python-dsl", "media", "README.md", "LICENSE"]
 }
