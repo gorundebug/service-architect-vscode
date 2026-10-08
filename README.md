@@ -1,5 +1,34 @@
 # Service Architect for VS Code
 
+## CLI installation and corporate networks
+
+Requires VS Code 1.110 or later. If the CLI is missing, choose **Install and
+continue**. The extension downloads pinned uv and Python into its private storage,
+installs the bundled CLI, and resumes the original action. No shell installer,
+project virtual environment changes, or manual proxy environment variables are needed.
+
+The uv archive is downloaded through VS Code's HTTP client. Python and package
+downloads use a short-lived authenticated loopback bridge which applies `http.proxy`,
+`http.noProxy`, and the operating system's proxy/PAC settings on the extension host.
+The native resolver is packaged for macOS, Windows and Linux, including both
+Apple Silicon and Intel Macs; it is not downloaded during CLI setup. In a remote
+workspace, installation uses the remote extension host's network configuration.
+
+Existing `http.proxyAuthorization` is used for the configured manual proxy. If a
+proxy requests Basic credentials that are not available, VS Code asks for them and
+stores them in SecretStorage. The extension cannot read the editor's private
+authentication cache or promise automatic NTLM/Kerberos sign-in. Corporate passwords
+are not placed in child-process environments or command lines. TLS verification
+remains enabled; corporate CA certificates must be trusted by the operating system.
+
+Run `npm run check` for local proxy regressions and `npm run bundle` to prepare the
+universal extension bundle. `node scripts/smoke-cli-setup.js` is an opt-in network
+test for a clean container with system CA certificates and no existing CLI/uv;
+it downloads dependencies, installs the CLI, checks reuse, and removes its temporary
+environment. Tests cover per-destination routes, upstream 407, route fallback,
+credential isolation, cancellation/closure, and native resolver loading. An actual
+corporate PAC deployment still needs testing on that network.
+
 ## Create a project
 
 Use **Service Architect: Import Project from YAML** to start from an existing
@@ -31,8 +60,8 @@ Read-only graph navigation for typed `sa-python-dsl` projects. The Python projec
 the only editable source. The viewer is the same EmbeddedDesigner used by Codex,
 including read-only Auto Layout, search, highlighting, and both graph renderers.
 
-Install `sa-python-dsl` in your Python environment and ensure `sa-dsl` is on PATH, or
-set `serviceArchitect.saDslCommand` to its absolute executable path. Open a trusted
+Use the automatic installation, or install `sa-python-dsl` in your own Python
+environment and set `serviceArchitect.saDslCommand` to its executable path. Open a trusted
 workspace containing `.service-architect/project.yaml` with `authoring.mode: python`,
 then run **Service Architect: Open Python Graph** from the command palette. If the
 workspace has multiple projects, choose one. A click on a graph node or link opens the
@@ -85,7 +114,7 @@ generation uploads the model only when explicitly requested.
 ## Develop
 
 Run `make docker-build` to validate and package the extension in Docker. The
-installable file is `dist/service-architect-vscode-0.1.2.vsix`. The build copies
+installable file is `dist/service-architect-vscode-0.1.7.vsix`. The build copies
 the project into the image; it does not mount source directories. Set
 `DEPENDENCY_DOCKER_REGISTRY` and `NPM_CONFIG_REGISTRY` for mirrored base images
 and npm packages. For interactive development, run `npm run check` and press F5

@@ -4,6 +4,8 @@ const fs = require('node:fs');
 const path = require('node:path');
 const os = require('node:os');
 const { spawn } = require('node:child_process');
+const { editorNetwork, download } = require('./cli-network');
+const { release, extractZip } = require('./uv-release');
 
 const VERSION = '0.1.5';
 const UV_VERSION = '0.11.22';
@@ -49,12 +51,12 @@ function resolveCli(context, command, cwd) {
   return undefined;
 }
 
-function run(command, args, root, token, extra = {}) {
+function run(command, args, root, token, network, extra = {}) {
   return new Promise((resolve, reject) => {
     if (token.isCancellationRequested) { reject(new Error('CLI setup cancelled')); return; }
     const env = { ...process.env, UV_CACHE_DIR: path.join(root, 'cache'),
       UV_PYTHON_INSTALL_DIR: path.join(root, 'python'), UV_PYTHON_DOWNLOADS: 'automatic',
-      UV_NO_PROGRESS: '1', ...extra };
+      UV_NO_PROGRESS: '1', UV_NATIVE_TLS: process.env.UV_NATIVE_TLS || 'true', ...network.environment, ...extra };
     for (const key of ['VIRTUAL_ENV', 'CONDA_PREFIX', 'PYTHONHOME', 'PYTHONPATH']) delete env[key];
     const child = spawn(command, args, { cwd: root, env, stdio: ['ignore', 'pipe', 'pipe'] });
     let tail = '';
@@ -70,7 +72,7 @@ function run(command, args, root, token, extra = {}) {
     child.once('close', code => {
       cleanup();
       if (stopped) reject(new Error(stopped));
-      else if (code !== 0) reject(new Error(`CLI setup failed (exit ${code}):\n${tail}`));
+      else if (code !== 0) reject(new Error(`CLI setup failed (exit ${code}):\n${network.redact(tail)}\n${network.diagnostic()}`));
       else resolve();
     });
     if (token.isCancellationRequested) stop('CLI setup cancelled');
@@ -86,49 +88,51 @@ async function install(context, progress, token) {
     if (error.code === 'EEXIST') throw new Error(`CLI setup is already running in another window. If that window crashed, remove ${lock} and retry.`);
     throw error;
   }
+  let network;
   try {
+    network = await editorNetwork(vscode, context);
     await fs.promises.rm(path.join(root, 'ready'), { force: true });
     let uv = findExecutable('uv', true);
     if (!uv) {
       const bin = path.join(root, 'tools');
       uv = path.join(bin, windows ? 'uv.exe' : 'uv');
       if (!executable(uv)) {
-        progress.report({ message: `Downloading uv ${UV_VERSION} from Astral` });
-        const controller = new AbortController();
-        const cancellation = token.onCancellationRequested(() => controller.abort());
-        const timer = setTimeout(() => controller.abort(), 45000);
-        const installer = path.join(root, windows ? 'install-uv.ps1' : 'install-uv.sh');
+        progress.report({ message: `Downloading uv ${UV_VERSION} using VS Code network settings` });
+        const target = release(process.platform, process.arch);
+        await fs.promises.mkdir(bin, { recursive: true });
+        const staging = await fs.promises.mkdtemp(path.join(bin, '.uv-install-'));
+        const archive = path.join(staging, 'download' + target.extension);
+        const extracted = path.join(staging, windows ? 'uv.exe' : 'uv');
         try {
+          await download(`https://github.com/astral-sh/uv/releases/download/${UV_VERSION}/${target.name}${target.extension}`, archive, token);
+          progress.report({ message: 'Installing uv in the private plugin environment' });
+          if (windows) await extractZip(archive, extracted, target.name, token);
+          else {
+            await run('/usr/bin/tar', ['-xzf', archive, '-C', staging, '--strip-components=1', target.name + '/uv'], root, token, network);
+            await fs.promises.chmod(extracted, 0o700);
+          }
+          if (!(await fs.promises.lstat(extracted)).isFile() || !executable(extracted)) throw new Error('uv archive did not contain an executable');
           if (token.isCancellationRequested) throw new Error('CLI setup cancelled');
-          const response = await fetch(`https://astral.sh/uv/${UV_VERSION}/${windows ? 'install.ps1' : 'install.sh'}`,
-            { signal: controller.signal });
-          if (!response.ok) throw new Error(`Cannot download uv installer: HTTP ${response.status}`);
-          const bytes = Buffer.from(await response.arrayBuffer());
-          if (bytes.length > 1024 * 1024) throw new Error('Unexpected uv installer size');
-          await fs.promises.writeFile(installer, bytes);
-        } finally { clearTimeout(timer); cancellation.dispose(); }
-        progress.report({ message: 'Installing uv in the private plugin environment' });
-        const command = windows
-          ? path.join(process.env.SystemRoot || 'C:\\Windows', 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe')
-          : '/bin/sh';
-        const args = windows ? ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File', installer] : [installer];
-        await run(command, args, root, token, { UV_UNMANAGED_INSTALL: bin, UV_NO_MODIFY_PATH: '1' });
-        if (!executable(uv)) throw new Error('uv installation did not produce an executable');
+          await fs.promises.rename(extracted, uv);
+        } finally { await fs.promises.rm(staging, { recursive: true, force: true }); }
       }
     }
     const environment = path.join(root, 'environment');
     progress.report({ message: 'Preparing isolated Python 3.12 environment' });
-    await run(uv, ['--no-config', 'venv', '--python', '3.12', '--managed-python', '--allow-existing', environment], root, token);
+    await run(uv, ['--no-config', 'venv', '--python', '3.12', '--managed-python', '--allow-existing', environment], root, token, network);
     progress.report({ message: 'Installing bundled Service Architect CLI and dependencies' });
     const python = path.join(environment, windows ? 'Scripts/python.exe' : 'bin/python');
     const source = path.join(context.extensionUri.fsPath, 'resources', 'sa-python-dsl');
-    await run(uv, ['--no-config', 'pip', 'install', '--python', python, source], root, token);
+    await run(uv, ['--no-config', 'pip', 'install', '--python', python, source], root, token, network);
     const cli = cliIn(environment);
     if (token.isCancellationRequested) throw new Error('CLI setup cancelled');
     if (!executable(cli)) throw new Error('Setup did not create sa-dsl');
     await fs.promises.writeFile(path.join(root, 'ready'), VERSION);
     return cli;
-  } finally { await fs.promises.rmdir(lock); }
+  } finally {
+    try { if (network) await network.close(); }
+    finally { await fs.promises.rmdir(lock); }
+  }
 }
 
 async function ensureCli(context, command, cwd) {
