@@ -5,6 +5,7 @@ const path = require('node:path');
 const { execFile } = require('node:child_process');
 const { parseCliOutput, resolveProjectFile, navigationArgs } = require('./host');
 const { ensureCli } = require('./cli-environment');
+const { openImplementation } = require('./implementation-navigation');
 let extensionContext;
 
 const runningActions = new Set();
@@ -105,6 +106,7 @@ async function openGraph(context, resource) {
   let alive = true;
   let generation = 0;
   let revision = '';
+  let currentSnapshot;
   let debounce;
   const refresh = async () => {
     const current = ++generation;
@@ -113,6 +115,7 @@ async function openGraph(context, resource) {
       if (result.status !== 'success' || !result.snapshot) throw new Error(result.message || 'Cannot export Python graph');
       if (alive && current === generation) {
         revision = result.snapshot.revision;
+        currentSnapshot = result.snapshot;
         panel.webview.postMessage({ type: 'service-architect:snapshot', snapshot: result.snapshot });
       }
     } catch (error) {
@@ -131,6 +134,12 @@ async function openGraph(context, resource) {
     if (message?.type !== 'navigate') return;
     if (message.selection?.revision !== revision) return;
     try {
+      if (message.selection.action === 'implementation') {
+        if (message.selection.kind !== 'node' || !currentSnapshot) return;
+        await openImplementation(vscode, project, currentSnapshot, message.selection);
+        return;
+      }
+      if (message.selection.action) throw new Error('Unsupported graph action');
       const location = await runCli(command, navigationArgs(project, message.selection), project);
       if (location.status !== 'success') throw new Error(location.message || 'Source location not found');
       const file = resolveProjectFile(project, location.location.file);

@@ -16,3 +16,4 @@ native-resolver.js
 uv-release.js
 extension.js
 host.js
+implementation-navigation.js

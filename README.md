@@ -77,6 +77,21 @@ for **Python Code**, **Show Component** and **Show Pipeline**. The latter action
 appear only for actual membership and focus the same scopes as the viewer's
 Components and Pipelines panels. They do not change the Python model.
 
+**Implementation** is also available for nodes with a user-owned business
+function or source/sink handler. The evaluated Python DSL supplies its name,
+role, language, module owner and package; no generator changes or generated
+source map are required. The extension searches current symbols using the
+installed language extensions: Go, C++ userver/Coro, Rust, Python and TypeScript.
+Multiple matches open a chooser. When symbol navigation is unavailable, matching
+source files are offered explicitly as file-only matches, without a guessed line.
+
+The search root uses `serviceArchitect.generatedProjectDirectory`, or the
+manifest's `generation.outputDirectory` when empty (default: Python project
+root). Open that directory in the VS Code workspace. This is the same destination
+used by generation, not a second setting. Include checked-out shared modules
+under the selected root. If no implementation exists, generate/merge the project
+first; refresh after DSL changes. Nodes without an implementation hide the action.
+
 Right-click `.service-architect/project.yaml` for **Materialize Effective Python DSL**
 or **Generate and Merge Project**. The first command evaluates Python, round-trips via
 canonical YAML, and writes a reviewable snapshot to `python-dsl/model/` without
@@ -114,7 +129,7 @@ generation uploads the model only when explicitly requested.
 ## Develop
 
 Run `make docker-build` to validate and package the extension in Docker. The
-installable file is `dist/service-architect-vscode-0.1.7.vsix`. The build copies
+installable file is `dist/service-architect-vscode-0.1.8.vsix`. The build copies
 the project into the image; it does not mount source directories. Set
 `DEPENDENCY_DOCKER_REGISTRY` and `NPM_CONFIG_REGISTRY` for mirrored base images
 and npm packages. For interactive development, run `npm run check` and press F5
