@@ -77,6 +77,15 @@ for **Python Code**, **Show Component** and **Show Pipeline**. The latter action
 appear only for actual membership and focus the same scopes as the viewer's
 Components and Pipelines panels. They do not change the Python model.
 
+With a graph open, moving the caret in authoring Python or business code highlights
+its associated nodes without moving the camera. **Service Architect: Show in Graph**
+(command palette or editor context menu) focuses one node; shared functions/factories
+offer a chooser. DSL factory bodies highlight all instances and individual calls
+highlight only their instances. Save and refresh after DSL edits; stale source
+ranges are cleared rather than guessed. Business-code navigation uses the installed
+language provider and generated-project directory, with file-level fallback if no
+symbol is available. An ambiguous file highlights all related nodes.
+
 **Implementation** is also available for nodes with a user-owned business
 function or source/sink handler. The evaluated Python DSL supplies its name,
 role, language, module owner and package; no generator changes or generated
@@ -132,7 +141,7 @@ generation uploads the model only when explicitly requested.
 ## Develop
 
 Run `make docker-build` to validate and package the extension in Docker. The
-installable file is `dist/service-architect-vscode-0.1.8.vsix`. The build copies
+installable file is `dist/service-architect-vscode-0.1.9.vsix`. The build copies
 the project into the image; it does not mount source directories. Set
 `DEPENDENCY_DOCKER_REGISTRY` and `NPM_CONFIG_REGISTRY` for mirrored base images
 and npm packages. For interactive development, run `npm run check` and press F5

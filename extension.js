@@ -6,6 +6,8 @@ const { execFile } = require('node:child_process');
 const { parseCliOutput, resolveProjectFile, navigationArgs } = require('./host');
 const { ensureCli } = require('./cli-environment');
 const { openImplementation } = require('./implementation-navigation');
+const { attachReverseNavigation } = require('./reverse-navigation');
+const reverseViews = new Set();
 let extensionContext;
 
 const runningActions = new Set();
@@ -107,6 +109,8 @@ async function openGraph(context, resource) {
   let generation = 0;
   let revision = '';
   let currentSnapshot;
+  const reverse = attachReverseNavigation(vscode, project, panel, () => currentSnapshot);
+  reverseViews.add(reverse);
   let debounce;
   const refresh = async () => {
     const current = ++generation;
@@ -117,6 +121,7 @@ async function openGraph(context, resource) {
         revision = result.snapshot.revision;
         currentSnapshot = result.snapshot;
         panel.webview.postMessage({ type: 'service-architect:snapshot', snapshot: result.snapshot });
+        reverse.refresh();
       }
     } catch (error) {
       if (alive && current === generation) vscode.window.showErrorMessage(`Service Architect: ${error}`);
@@ -152,6 +157,7 @@ async function openGraph(context, resource) {
   });
   panel.onDidDispose(() => {
     alive = false; clearTimeout(debounce); watcher.dispose(); manifestWatcher.dispose();
+    reverse.dispose(); reverseViews.delete(reverse);
   });
   panel.webview.html = webviewHtml(panel, context.extensionUri);
 }
@@ -283,6 +289,14 @@ async function configureGeneration(resource) {
 
 function activate(context) {
   extensionContext = context;
+  context.subscriptions.push(vscode.commands.registerCommand('serviceArchitect.showInGraph', async () => {
+    try {
+      const views=[...reverseViews];
+      if (!views.length) { vscode.window.showInformationMessage('Open Service Architect: Open Python Graph first.'); return; }
+      const view=views.length===1 ? views[0] : await vscode.window.showQuickPick(views.map(item=>({label:item.project,view:item})), {title:'Select Service Architect graph'}).then(item=>item?.view);
+      if(view) await view.show();
+    } catch(error){vscode.window.showWarningMessage(`Service Architect: ${error}`);}
+  }));
   context.subscriptions.push(vscode.commands.registerCommand('serviceArchitect.configureGeneration',
     resource => configureGeneration(resource).catch(error => vscode.window.showErrorMessage(`Service Architect: ${error}`))));
   context.subscriptions.push(vscode.commands.registerCommand('serviceArchitect.importProject',

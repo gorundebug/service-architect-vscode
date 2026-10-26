@@ -2,6 +2,10 @@
   const vscode = acquireVsCodeApi();
   window.addEventListener('message', event => {
     const message = event.data;
+    if (message?.type === 'service-architect:editor-selection') {
+      window.dispatchEvent(new CustomEvent('service-architect:editor-selection',{detail:message}));
+      return;
+    }
     if (!message || message.type !== 'service-architect:snapshot' ||
         !message.snapshot || typeof message.snapshot !== 'object') return;
     window.__SERVICE_ARCHITECT_SNAPSHOT__ = message.snapshot;

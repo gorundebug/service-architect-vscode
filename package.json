@@ -2,7 +2,7 @@
   "name": "service-architect-vscode",
   "displayName": "Service Architect",
   "description": "Read-only Service Architect graph navigation for typed Python projects",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "publisher": "gorundebug",
   "license": "MIT",
   "repository": {
@@ -26,6 +26,7 @@
   ],
   "contributes": {
     "commands": [
+      { "command": "serviceArchitect.showInGraph", "title": "Service Architect: Show in Graph" },
       {
         "command": "serviceArchitect.configureGeneration",
         "title": "Service Architect: Configure Generator Access (.env)"
@@ -53,6 +54,9 @@
       }
     ],
     "menus": {
+      "editor/context": [
+        { "command": "serviceArchitect.showInGraph", "when": "resourceScheme == file", "group": "navigation" }
+      ],
       "explorer/context": [
         {
           "command": "serviceArchitect.configureGeneration",

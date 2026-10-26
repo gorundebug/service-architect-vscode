@@ -45,3 +45,17 @@ test('embedded Designer selection uses the shared IDE event contract', () => {
     revision: 'sha256:one', kind: 'node', service: 'orders', key: 'processOrder',
   } });
 });
+
+test('editor selections use a separate incoming channel and never navigate to source', () => {
+  const listeners=new Map(), events=[], messages=[];
+  const window={addEventListener:(type,callback)=>listeners.set(type,callback),dispatchEvent:event=>events.push(event)};
+  vm.runInNewContext(fs.readFileSync(path.join(__dirname,'..','media','host-vscode.js'),'utf8'), {
+    window,CustomEvent:class {constructor(type,options){this.type=type;this.detail=options.detail;}},
+    acquireVsCodeApi:()=>({postMessage:message=>messages.push(message)}),
+  });
+  const data={type:'service-architect:editor-selection',revision:'one',nodes:[{service:'svc',key:'node'}]};
+  listeners.get('message')({data});
+  assert.equal(events[0].type,'service-architect:editor-selection');
+  assert.equal(events[0].detail,data);
+  assert.deepEqual(messages,[]);
+});
