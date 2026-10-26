@@ -86,6 +86,15 @@ ranges are cleared rather than guessed. Business-code navigation uses the instal
 language provider and generated-project directory, with file-level fallback if no
 symbol is available. An ambiguous file highlights all related nodes.
 
+With a graph open, CodeLens shows clickable **Show in Graph** links above Python
+node-creation expressions and resolved business declarations. Shared/same-line
+nodes offer a chooser. VS Code gutter decorations have no public click API, so
+this uses standard CodeLens without intercepting breakpoint or line-selection
+clicks. Enable `editor.codeLens` if these links are hidden. Markers never guess
+source lines from filenames; edited DSL loses its markers until graph refresh.
+Editor-only releases reuse the private CLI runtime specified by
+`serviceArchitectCliVersion` in `package.json` instead of requiring another setup.
+
 **Implementation** is also available for nodes with a user-owned business
 function or source/sink handler. The evaluated Python DSL supplies its name,
 role, language, module owner and package; no generator changes or generated
@@ -141,7 +150,7 @@ generation uploads the model only when explicitly requested.
 ## Develop
 
 Run `make docker-build` to validate and package the extension in Docker. The
-installable file is `dist/service-architect-vscode-0.1.9.vsix`. The build copies
+installable file is `dist/service-architect-vscode-0.1.10.vsix`. The build copies
 the project into the image; it does not mount source directories. Set
 `DEPENDENCY_DOCKER_REGISTRY` and `NPM_CONFIG_REGISTRY` for mirrored base images
 and npm packages. For interactive development, run `npm run check` and press F5

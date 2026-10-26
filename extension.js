@@ -289,6 +289,12 @@ async function configureGeneration(resource) {
 
 function activate(context) {
   extensionContext = context;
+  context.subscriptions.push(vscode.commands.registerCommand('serviceArchitect.showGraphMarker', async (id,uri,position,revision,version) => {
+    try {
+      const view=[...reverseViews].find(item=>item.id===id);
+      if(view) await view.showAt(uri,position,revision,version);
+    } catch(error) { vscode.window.showWarningMessage(`Service Architect: ${error}`); }
+  }));
   context.subscriptions.push(vscode.commands.registerCommand('serviceArchitect.showInGraph', async () => {
     try {
       const views=[...reverseViews];
