@@ -7,7 +7,7 @@ const { spawn } = require('node:child_process');
 const { editorNetwork, download } = require('./cli-network');
 const { release, extractZip } = require('./uv-release');
 
-const VERSION = '0.1.5';
+const VERSION = require('./package.json').version;
 const UV_VERSION = '0.11.22';
 const windows = process.platform === 'win32';
 let pendingInstallation;

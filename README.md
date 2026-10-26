@@ -91,6 +91,9 @@ root). Open that directory in the VS Code workspace. This is the same destinatio
 used by generation, not a second setting. Include checked-out shared modules
 under the selected root. If no implementation exists, generate/merge the project
 first; refresh after DSL changes. Nodes without an implementation hide the action.
+The package bundles the updated CLI and uses a versioned private CLI environment.
+If you explicitly select a project/global CLI instead, update that sa-python-dsl
+checkout too: older CLI snapshots remain Python-navigation-only.
 
 Right-click `.service-architect/project.yaml` for **Materialize Effective Python DSL**
 or **Generate and Merge Project**. The first command evaluates Python, round-trips via
