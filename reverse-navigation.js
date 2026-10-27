@@ -2,7 +2,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
-const { confinedFile, basenameMatches } = require('./implementation-navigation');
+const { implementationFile, basenameMatches } = require('./implementation-navigation');
 
 function inRange(range, line, column) {
   const start = [range.line, range.column || 1];
@@ -47,7 +47,7 @@ function relatedNodes(snapshot, project, generatedRoot, file, text, position, sy
   for (const [service, values] of Object.entries(snapshot.implementations || {})) {
     for (const [key, targets] of Object.entries(values)) {
       for (const target of targets) {
-        if (!confinedFile(generatedRoot,real,target.language)) continue;
+        if (!implementationFile(generatedRoot,real,target)) continue;
         const node = {service,key};
         if (target.symbols.some(name => symbols.enclosing.has(name))) groups[0].push(node);
         else if (target.symbols.some(name => symbols.all.has(name))) groups[1].push(node);
@@ -79,7 +79,7 @@ function lineMarkers(snapshot, project, generatedRoot, file, text, symbols) {
     const visit=item=>{
       const start=(item.selectionRange||item.range||item.location?.range)?.start;
       if(start) for(const [service,nodes] of Object.entries(snapshot.implementations||{})) for(const [key,targets] of Object.entries(nodes))
-        if(targets.some(target=>confinedFile(generatedRoot,real,target.language) && target.symbols.some(name=>
+        if(targets.some(target=>implementationFile(generatedRoot,real,target) && target.symbols.some(name=>
           item.name===name || item.name?.startsWith(name+'(') || item.name?.startsWith(name+'<') || item.name?.endsWith('::'+name)))) add(start.line,start.character,{service,key});
       for(const child of item.children||[]) visit(child);
     };
@@ -105,7 +105,7 @@ function attachReverseNavigation(vscode, project, panel, getSnapshot) {
       try { isSource=Object.hasOwn(snapshot.sourceLocations?.files||{},path.relative(fs.realpathSync(project),fs.realpathSync(document.uri.fsPath)).split(path.sep).join('/')); }
       catch { return []; }
       if(!isSource && !Object.values(snapshot.implementations||{}).some(nodes=>Object.values(nodes).some(targets=>
-        targets.some(target=>confinedFile(root,document.uri.fsPath,target.language))))) return [];
+        targets.some(target=>implementationFile(root,document.uri.fsPath,target))))) return [];
       let items=[];
       try { if(!isSource) items=await vscode.commands.executeCommand('vscode.executeDocumentSymbolProvider',document.uri)||[]; }
       catch { /* DSL expressions do not need a language provider. */ }

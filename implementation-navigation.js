@@ -25,7 +25,32 @@ function basenameMatches(file, symbols) {
   return symbols.some(symbol => normalized(stem) === normalized(symbol));
 }
 
+// Only direct generated owners participate. Never discover modules recursively:
+// archived workspaces can contain identical symbols and module manifests.
+function ownerRoots(root, target) {
+  if (typeof target.owner !== 'string') return [];
+  const owner = target.owner.toLowerCase().replace(/\s/g, '');
+  if (!owner || owner === '.' || owner === '..' || /[/\\]/.test(owner)) return [];
+  const matches = name => name.toLowerCase() === owner || (target.owner !== target.service && name.toLowerCase().startsWith(owner + '_'));
+  try {
+    root = fs.realpathSync(root);
+    if (matches(path.basename(root))) return [root];
+    return fs.readdirSync(root, {withFileTypes:true}).filter(entry => matches(entry.name) && (entry.isDirectory() || entry.isSymbolicLink()))
+      .map(entry => fs.realpathSync(path.join(root, entry.name))).filter(directory => {
+        const relative = path.relative(root, directory);
+        return relative && relative !== '..' && !relative.startsWith('..' + path.sep) && !path.isAbsolute(relative) && fs.statSync(directory).isDirectory();
+      });
+  } catch { return []; }
+}
+
+function implementationFile(root, file, target) {
+  return ownerRoots(root, target).some(owner => confinedFile(owner, file, target.language));
+}
+
 async function findCandidates(vscode, root, target) {
+  const owners = ownerRoots(root, target);
+  if (!owners.length) return [];
+  const allowed = file => owners.some(owner => confinedFile(owner, file, target.language));
   const candidates = new Map();
   const symbols = target.symbols.filter(name => typeof name === 'string' && name.length < 256);
   for (const name of symbols) {
@@ -33,8 +58,8 @@ async function findCandidates(vscode, root, target) {
     for (const item of matches) {
       const location = item.location;
       if (!symbols.includes(item.name) || location?.uri?.scheme !== 'file' || !location.range ||
-          !confinedFile(root, location.uri.fsPath, target.language)) continue;
-      const key = location.uri.fsPath + ':' + location.range.start.line;
+          !allowed(location.uri.fsPath)) continue;
+      const key = fs.realpathSync(location.uri.fsPath) + ':' + location.range.start.line + ':' + location.range.start.character;
       candidates.set(key, { label: item.name, description: path.relative(root, location.uri.fsPath),
         detail: `${target.role} · ${target.owner} · ${target.package || '(root package)'}`,
         uri: location.uri, range: location.range });
@@ -46,9 +71,9 @@ async function findCandidates(vscode, root, target) {
   const suffixes = extensions[target.language];
   if (!suffixes) return [];
   const pattern = suffixes.length === 1 ? `**/*.${suffixes[0]}` : `**/*.{${suffixes.join(',')}}`;
-  const files = await vscode.workspace.findFiles(new vscode.RelativePattern(root, pattern), excluded, 10000);
+  const files = (await Promise.all(owners.map(owner => vscode.workspace.findFiles(new vscode.RelativePattern(owner, pattern), excluded, 10000)))).flat();
   for (const uri of files) {
-    if (!confinedFile(root, uri.fsPath, target.language) || !basenameMatches(uri.fsPath, symbols)) continue;
+    if (!allowed(uri.fsPath) || !basenameMatches(uri.fsPath, symbols)) continue;
     candidates.set(uri.fsPath, { label: path.basename(uri.fsPath), description: path.relative(root, uri.fsPath),
       detail: 'File match only — install/enable language support for symbol navigation', uri });
   }
@@ -71,8 +96,10 @@ async function openImplementation(vscode, project, snapshot, selection) {
   if (!inWorkspace) {
     throw new Error('Open the generated project directory in this workspace before navigating to implementations');
   }
-  const candidates = [];
-  for (const target of targets) candidates.push(...await findCandidates(vscode, root, target));
+  const unique = new Map();
+  for (const target of targets) for (const item of await findCandidates(vscode, root, target))
+    unique.set(fs.realpathSync(item.uri.fsPath) + ':' + JSON.stringify(item.range?.start || null), item);
+  const candidates = [...unique.values()];
   if (!candidates.length) throw new Error(`Implementation not found under ${root}. Check the generated project directory and language extension, and wait for indexing.`);
   const selected = candidates.length === 1 ? candidates[0] : await vscode.window.showQuickPick(candidates,
     { title: 'Select business implementation', matchOnDescription: true, matchOnDetail: true });
@@ -82,4 +109,4 @@ async function openImplementation(vscode, project, snapshot, selection) {
     ...(selected.range ? { selection: selected.range } : {}) });
 }
 
-module.exports = { openImplementation, findCandidates, basenameMatches, confinedFile };
+module.exports = { openImplementation, findCandidates, basenameMatches, confinedFile, ownerRoots, implementationFile };

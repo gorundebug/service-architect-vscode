@@ -150,7 +150,7 @@ generation uploads the model only when explicitly requested.
 ## Develop
 
 Run `make docker-build` to validate and package the extension in Docker. The
-installable file is `dist/service-architect-vscode-0.1.10.vsix`. The build copies
+installable file is `dist/service-architect-vscode-0.1.11.vsix`. The build copies
 the project into the image; it does not mount source directories. Set
 `DEPENDENCY_DOCKER_REGISTRY` and `NPM_CONFIG_REGISTRY` for mirrored base images
 and npm packages. For interactive development, run `npm run check` and press F5

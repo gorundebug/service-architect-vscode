@@ -36,8 +36,8 @@ test('business code matches current language symbols for every runtime and prese
   t.after(()=>fs.rmSync(root,{recursive:true,force:true}));
   for(const [language,ext] of [['GoLang','go'],['CppUserver','cpp'],['CppCoro','hpp'],['Rust','rs'],['Python','py'],['TypeScript','ts']]) {
     const file=path.join(root,`business.${ext}`);fs.writeFileSync(file,'');
-    const target={language,symbols:['ProcessOrder']};
-    const snapshot={implementations:{svc:{one:[target],two:[target],other:[{language,symbols:['Other']}]}}};
+    const target={language,symbols:['ProcessOrder'],owner:path.basename(root),service:path.basename(root)};
+    const snapshot={implementations:{svc:{one:[target],two:[target],other:[{...target,symbols:['Other']}]}}};
     const symbols=symbolNames([{name:'ProcessOrder',range:{start:{line:0,character:0},end:{line:20,character:0}}},
       {name:'Other',range:{start:{line:21,character:0},end:{line:30,character:0}}}],{line:4,character:0});
     assert.deepEqual(relatedNodes(snapshot,root,root,file,'',{line:4,character:0},symbols).nodes,

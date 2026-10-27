@@ -26,7 +26,7 @@ test('business markers cover every runtime, only exact declarations, never file-
   const {root}=fixture(t);
   for(const [language,ext] of [['GoLang','go'],['CppUserver','cpp'],['CppCoro','hpp'],['Rust','rs'],['Python','py'],['TypeScript','ts']]) {
     const file=path.join(root,'Process.'+ext);fs.writeFileSync(file,'');
-    const target={language,symbols:['Process']},snapshot={implementations:{svc:{one:[target],two:[target]}}};
+    const target={language,symbols:['Process'],owner:path.basename(root),service:path.basename(root)},snapshot={implementations:{svc:{one:[target],two:[target]}}};
     const symbol={name:'Process',range:{start:{line:2,character:0},end:{line:9,character:0}},selectionRange:{start:{line:2,character:6},end:{line:2,character:13}}};
     assert.deepEqual(lineMarkers(snapshot,root,root,file,'',[symbol]),[{line:2,column:6,nodes:[{service:'svc',key:'one'},{service:'svc',key:'two'}]}],language);
     assert.deepEqual(lineMarkers(snapshot,root,root,file,'',[]),[],language+' no guessed line');
