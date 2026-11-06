@@ -1,7 +1,7 @@
 # Service Architect for VS Code
 
-Version 0.1.12 bundles the updated Python DSL, including typed interval schedules
-and evaluated source-navigation mappings. Its private CLI environment is 0.1.10;
+Version 0.1.17 bundles the updated Python DSL, including Custom endpoint `enabled`, typed interval schedules,
+evaluated source-navigation mappings and optional Go SubStream call analysis. Its private CLI environment is 0.1.20;
 an explicitly configured external CLI must be updated separately.
 
 ## CLI installation and corporate networks
@@ -69,7 +69,7 @@ environment and set `serviceArchitect.saDslCommand` to its executable path. Open
 workspace containing `.service-architect/project.yaml` with `authoring.mode: python`,
 then run **Service Architect: Open Python Graph** from the command palette. If the
 workspace has multiple projects, choose one. A click on a graph node or link opens the
-matching Python expression. Saving Python files refreshes the read-only graph.
+matching Python expression. Click Refresh after saving Python files to update the read-only graph.
 Each snapshot evaluates Python and saves the resulting YAML to `canonical.output`
 from the manifest (`.service-architect/build/<workspace-folder>.yaml` for new projects), then
 displays that same model. The SA project root `.gitignore` is created or extended
@@ -154,7 +154,7 @@ generation uploads the model only when explicitly requested.
 ## Develop
 
 Run `make docker-build` to validate and package the extension in Docker. The
-installable file is `dist/service-architect-vscode-0.1.12.vsix`. The build copies
+installable file is `dist/service-architect-vscode-0.1.17.vsix`. The build copies
 the project into the image; it does not mount source directories. Set
 `DEPENDENCY_DOCKER_REGISTRY` and `NPM_CONFIG_REGISTRY` for mirrored base images
 and npm packages. For interactive development, run `npm run check` and press F5
@@ -166,3 +166,21 @@ after building a new immutable UI version. Run it with `--check` before packagin
 verify that both IDE plugins contain that exact build. If the viewer is built in a
 separate release checkout, pass `--source-dir /path/to/public/mcp-ui/0.1.11` to both
 sync and check. Do not edit the bundles directly.
+
+## SubStream calls from code (Go)
+
+Only clicking **Refresh** analyzes all Go services with SubStreams, after displaying
+the model. Opening the graph does not start call analysis. Analysis uses the
+Python model and saved Go sources, including
+makers, helpers and interface calls. Purple dashed links show possible calls;
+select a link to inspect its source chain. Shared functions can link multiple
+business nodes; calls without a business ancestor are omitted.
+
+Save files first. Edits do not invalidate or rebuild the overlay: it stays until
+Refresh or explicit hiding. No code/configuration watchers are registered for
+call analysis, and no model links are added. This
+first implementation requires Go 1.25+ on the CLI PATH and a buildable Go
+workspace. The analyzer is compiled and cached on first use; Go may download
+its pinned analysis dependencies. Other languages are not supported yet.
+Dynamic/reflection-dependent calls may be unresolved, and static analysis may
+report several possible targets. Use **Hide code calls** to remove the overlay.

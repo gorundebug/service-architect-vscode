@@ -18,3 +18,4 @@ extension.js
 host.js
 implementation-navigation.js
 reverse-navigation.js
+substream-calls.js

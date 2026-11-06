@@ -6,6 +6,7 @@ const { execFile } = require('node:child_process');
 const { parseCliOutput, resolveProjectFile, navigationArgs } = require('./host');
 const { ensureCli } = require('./cli-environment');
 const { openImplementation } = require('./implementation-navigation');
+const { attachSubstreamCalls } = require('./substream-calls');
 const { attachReverseNavigation } = require('./reverse-navigation');
 const reverseViews = new Set();
 let extensionContext;
@@ -16,7 +17,7 @@ let runningGenerations = 0;
 async function runCli(command, args, cwd, onProgress) {
   command = await ensureCli(extensionContext, command, cwd);
   return new Promise((resolve, reject) => {
-    const child = execFile(command, args, { cwd, timeout: args[0] === 'ide-generate' ? 45 * 60 * 1000 : 60000,
+    const child = execFile(command, args, { cwd, timeout: args[0] === 'ide-generate' ? 45 * 60 * 1000 : args[0] === 'ide-substream-calls' ? 300000 : 60000,
       maxBuffer: 24 * 1024 * 1024 },
       (error, stdout, stderr) => {
         if (error?.code === 'ENOENT') {
@@ -110,9 +111,10 @@ async function openGraph(context, resource) {
   let revision = '';
   let currentSnapshot;
   const reverse = attachReverseNavigation(vscode, project, panel, () => currentSnapshot);
+  const calls = attachSubstreamCalls(vscode, project, panel, () => currentSnapshot, runCli, command);
   reverseViews.add(reverse);
-  let debounce;
-  const refresh = async () => {
+  const refresh = async (analyzeCalls = false) => {
+    calls.invalidate();
     const current = ++generation;
     try {
       const result = await runCli(command, ['ide-snapshot', '--project', project], project);
@@ -122,20 +124,19 @@ async function openGraph(context, resource) {
         currentSnapshot = result.snapshot;
         panel.webview.postMessage({ type: 'service-architect:snapshot', snapshot: result.snapshot });
         reverse.refresh();
+        if (analyzeCalls) void calls.run({revision}).catch(error => {
+          if (alive && current === generation) panel.webview.postMessage({
+            type:'service-architect:code-calls',revision,status:'failed',message:String(error),
+          });
+        });
       }
     } catch (error) {
       if (alive && current === generation) vscode.window.showErrorMessage(`Service Architect: ${error}`);
     }
   };
-  const schedule = () => { clearTimeout(debounce); debounce = setTimeout(refresh, 350); };
-  const watcher = vscode.workspace.createFileSystemWatcher(new vscode.RelativePattern(project, '**/*.py'));
-  watcher.onDidChange(schedule); watcher.onDidCreate(schedule); watcher.onDidDelete(schedule);
-  const manifestWatcher = vscode.workspace.createFileSystemWatcher(
-    new vscode.RelativePattern(project, '.service-architect/project.yaml'));
-  manifestWatcher.onDidChange(schedule);
   panel.webview.onDidReceiveMessage(async message => {
     if (!alive) return;
-    if (message?.type === 'ready') { refresh(); return; }
+    if (message?.type === 'ready' || message?.type === 'refresh') { refresh(message.type === 'refresh'); return; }
     if (message?.type !== 'navigate') return;
     if (message.selection?.revision !== revision) return;
     try {
@@ -156,8 +157,9 @@ async function openGraph(context, resource) {
     } catch (error) { vscode.window.showWarningMessage(`Service Architect: ${error}`); }
   });
   panel.onDidDispose(() => {
-    alive = false; clearTimeout(debounce); watcher.dispose(); manifestWatcher.dispose();
+    alive = false;
     reverse.dispose(); reverseViews.delete(reverse);
+    calls.dispose();
   });
   panel.webview.html = webviewHtml(panel, context.extensionUri);
 }
