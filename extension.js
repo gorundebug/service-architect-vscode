@@ -7,6 +7,7 @@ const { parseCliOutput, resolveProjectFile, navigationArgs } = require('./host')
 const { ensureCli } = require('./cli-environment');
 const { openImplementation } = require('./implementation-navigation');
 const { attachSubstreamCalls } = require('./substream-calls');
+const { goToolchainEnvironment } = require('./go-toolchain');
 const { attachReverseNavigation } = require('./reverse-navigation');
 const reverseViews = new Set();
 let extensionContext;
@@ -16,8 +17,14 @@ let runningGenerations = 0;
 
 async function runCli(command, args, cwd, onProgress) {
   command = await ensureCli(extensionContext, command, cwd);
+  let env;
+  if (args[0] === 'ide-substream-calls') {
+    const outputIndex = args.indexOf('--output-dir');
+    const generatedRoot = path.resolve(cwd, outputIndex < 0 ? '.' : args[outputIndex + 1]);
+    env = await goToolchainEnvironment(vscode, generatedRoot);
+  }
   return new Promise((resolve, reject) => {
-    const child = execFile(command, args, { cwd, timeout: args[0] === 'ide-generate' ? 45 * 60 * 1000 : args[0] === 'ide-substream-calls' ? 300000 : 60000,
+    const child = execFile(command, args, { cwd, env, timeout: args[0] === 'ide-generate' ? 45 * 60 * 1000 : args[0] === 'ide-substream-calls' ? 300000 : 60000,
       maxBuffer: 24 * 1024 * 1024 },
       (error, stdout, stderr) => {
         if (error?.code === 'ENOENT') {

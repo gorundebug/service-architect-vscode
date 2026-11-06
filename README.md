@@ -1,6 +1,6 @@
 # Service Architect for VS Code
 
-Version 0.1.18 bundles the updated Python DSL, including Custom endpoint `enabled`, typed interval schedules,
+Version 0.1.19 bundles the updated Python DSL, including Custom endpoint `enabled`, typed interval schedules,
 evaluated source-navigation mappings and optional Go SubStream call analysis. Its private CLI environment is 0.1.21;
 an explicitly configured external CLI must be updated separately.
 
@@ -154,7 +154,7 @@ generation uploads the model only when explicitly requested.
 ## Develop
 
 Run `make docker-build` to validate and package the extension in Docker. The
-installable file is `dist/service-architect-vscode-0.1.18.vsix`. The build copies
+installable file is `dist/service-architect-vscode-0.1.19.vsix`. The build copies
 the project into the image; it does not mount source directories. Set
 `DEPENDENCY_DOCKER_REGISTRY` and `NPM_CONFIG_REGISTRY` for mirrored base images
 and npm packages. For interactive development, run `npm run check` and press F5
@@ -179,7 +179,7 @@ business nodes; calls without a business ancestor are omitted.
 Save files first. Edits do not invalidate or rebuild the overlay: it stays until
 Refresh or explicit hiding. No code/configuration watchers are registered for
 call analysis, and no model links are added. This
-first implementation requires Go 1.25+ on the CLI PATH and a buildable Go
+first implementation requires Go 1.25+ selected in the IDE (or available on PATH) and a buildable Go
 workspace. The analyzer is compiled and cached on first use; Go may download
 its pinned analysis dependencies. Other languages are not supported yet.
 Dynamic/reflection-dependent calls may be unresolved, and static analysis may
@@ -189,3 +189,5 @@ Refresh now explains that it reloads the Python model and analyzes saved Go code
 Call-analysis progress and errors remain visible above the graph on every sidebar tab.
 Errors include dependency diagnostics; analysis uses the project’s ordinary go.work/go.mod.
 Default Go template acronym spelling (for example DSP → Dsp) is recognized.
+
+SubStream call analysis uses the Go extension’s selected SDK (**Go: Choose Go Environment**) for the generated workspace, with `go.alternateTools.go` / `go.goroot` and the process PATH as fallbacks. This environment is passed only to analysis on **Refresh graph & calls**, without changing global settings or project files.
