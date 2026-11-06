@@ -1,7 +1,7 @@
 # Service Architect for VS Code
 
-Version 0.1.17 bundles the updated Python DSL, including Custom endpoint `enabled`, typed interval schedules,
-evaluated source-navigation mappings and optional Go SubStream call analysis. Its private CLI environment is 0.1.20;
+Version 0.1.18 bundles the updated Python DSL, including Custom endpoint `enabled`, typed interval schedules,
+evaluated source-navigation mappings and optional Go SubStream call analysis. Its private CLI environment is 0.1.21;
 an explicitly configured external CLI must be updated separately.
 
 ## CLI installation and corporate networks
@@ -154,7 +154,7 @@ generation uploads the model only when explicitly requested.
 ## Develop
 
 Run `make docker-build` to validate and package the extension in Docker. The
-installable file is `dist/service-architect-vscode-0.1.17.vsix`. The build copies
+installable file is `dist/service-architect-vscode-0.1.18.vsix`. The build copies
 the project into the image; it does not mount source directories. Set
 `DEPENDENCY_DOCKER_REGISTRY` and `NPM_CONFIG_REGISTRY` for mirrored base images
 and npm packages. For interactive development, run `npm run check` and press F5
@@ -169,7 +169,7 @@ sync and check. Do not edit the bundles directly.
 
 ## SubStream calls from code (Go)
 
-Only clicking **Refresh** analyzes all Go services with SubStreams, after displaying
+Only clicking **Refresh graph & calls** analyzes all Go services with SubStreams, after displaying
 the model. Opening the graph does not start call analysis. Analysis uses the
 Python model and saved Go sources, including
 makers, helpers and interface calls. Purple dashed links show possible calls;
@@ -184,3 +184,8 @@ workspace. The analyzer is compiled and cached on first use; Go may download
 its pinned analysis dependencies. Other languages are not supported yet.
 Dynamic/reflection-dependent calls may be unresolved, and static analysis may
 report several possible targets. Use **Hide code calls** to remove the overlay.
+
+Refresh now explains that it reloads the Python model and analyzes saved Go code.
+Call-analysis progress and errors remain visible above the graph on every sidebar tab.
+Errors include dependency diagnostics; analysis uses the project’s ordinary go.work/go.mod.
+Default Go template acronym spelling (for example DSP → Dsp) is recognized.

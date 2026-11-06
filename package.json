@@ -2,8 +2,8 @@
   "name": "service-architect-vscode",
   "displayName": "Service Architect",
   "description": "Read-only Service Architect graph navigation for typed Python projects",
-  "version": "0.1.17",
-  "serviceArchitectCliVersion": "0.1.20",
+  "version": "0.1.18",
+  "serviceArchitectCliVersion": "0.1.21",
   "publisher": "gorundebug",
   "license": "MIT",
   "repository": {
