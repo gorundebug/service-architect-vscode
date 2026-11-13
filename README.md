@@ -1,7 +1,7 @@
 # Service Architect for VS Code
 
-Version 0.1.19 bundles the updated Python DSL, including Custom endpoint `enabled`, typed interval schedules,
-evaluated source-navigation mappings and optional Go SubStream call analysis. Its private CLI environment is 0.1.21;
+Version 0.1.20 bundles the updated Python DSL and EmbeddedDesigner 0.1.16,
+including corrected SubStream Input result bindings. Its private CLI environment is 0.1.22;
 an explicitly configured external CLI must be updated separately.
 
 ## CLI installation and corporate networks
@@ -154,7 +154,7 @@ generation uploads the model only when explicitly requested.
 ## Develop
 
 Run `make docker-build` to validate and package the extension in Docker. The
-installable file is `dist/service-architect-vscode-0.1.19.vsix`. The build copies
+installable file is `dist/service-architect-vscode-0.1.20.vsix`. The build copies
 the project into the image; it does not mount source directories. Set
 `DEPENDENCY_DOCKER_REGISTRY` and `NPM_CONFIG_REGISTRY` for mirrored base images
 and npm packages. For interactive development, run `npm run check` and press F5
