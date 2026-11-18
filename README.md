@@ -1,8 +1,31 @@
 # Service Architect for VS Code
 
-Version 0.1.21 bundles EmbeddedDesigner 0.1.17 with matching SubStream visual
-validation and scope-aware result selectors. Its private CLI environment remains 0.1.22;
+Release 0.1.22: official NATS Core/JetStream, Pulsar, Redis Streams and
+RabbitMQ capabilities; TypeScript RabbitMQ is sink-only. Bundles Designer
+0.1.19 and managed CLI 0.1.24. Framework release: v0.2.182.
+
+
+The current source tree for version 0.1.21 embeds Designer assets matching the
+0.1.18 build, including native broker properties. Its private CLI environment remains 0.1.22;
 an explicitly configured external CLI must be updated separately.
+
+## Message brokers
+
+The embedded viewer recognizes NATS Core, JetStream, Apache Pulsar, Redis Streams
+and RabbitMQ AMQP 1.0. Edit connectors and endpoints in the typed Python model,
+then **Refresh** to update the graph. The IDE viewer remains read-only.
+
+Availability depends on the service language and the configured generator's
+capabilities, not just this extension's version. Refresh the workspace capability
+cache with the MCP `refresh_capabilities` tool after changing the backend. An older
+remote generator is not upgraded by installing this extension. Unsupported pairs
+must remain unavailable; in particular, an official C++ library alone does not
+establish userver support.
+
+Creating broker resources is explicit opt-in. Store credentials in runtime
+environment/Vault configuration, not in graph properties. Handler completion is
+not input ACK, and async publication admission is not broker confirmation; use
+the generated endpoint task and native SDK contract for the selected transport.
 
 ## CLI installation and corporate networks
 
