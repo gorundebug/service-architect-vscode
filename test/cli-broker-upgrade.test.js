@@ -5,7 +5,7 @@ const os = require('node:os');
 const path = require('node:path');
 const vm = require('node:vm');
 
-test('managed CLI upgrade cannot reuse pre-direction 0.1.23 or pre-broker runtime', async t => {
+test('managed CLI upgrade cannot reuse pre-Query 0.1.24 or older runtime', async t => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'sa-cli-upgrade-'));
   t.after(() => fs.rmSync(root, {recursive:true, force:true}));
   const create = version => {
@@ -18,6 +18,8 @@ test('managed CLI upgrade cannot reuse pre-direction 0.1.23 or pre-broker runtim
   };
   create('0.1.22');
   create('0.1.23');
+  create('0.1.24');
+  assert.notEqual(require('../package.json').serviceArchitectCliVersion, '0.1.24');
   assert.notEqual(require('../package.json').serviceArchitectCliVersion, '0.1.23');
   let prompts = 0;
   const vscode = {Uri:{file:p=>p}, workspace:{isTrusted:true,getWorkspaceFolder:()=>undefined},
