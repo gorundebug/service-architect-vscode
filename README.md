@@ -1,13 +1,8 @@
 # Service Architect for VS Code
 
-Release 0.1.22: official NATS Core/JetStream, Pulsar, Redis Streams and
-RabbitMQ capabilities; TypeScript RabbitMQ is sink-only. Bundles Designer
-0.1.19 and managed CLI 0.1.24. Framework release: v0.2.182.
-
-
-The current source tree for version 0.1.21 embeds Designer assets matching the
-0.1.18 build, including native broker properties. Its private CLI environment remains 0.1.22;
-an explicitly configured external CLI must be updated separately.
+Release 0.1.28 bundles Designer 0.1.25 with corrected pipeline entry placement
+and double-click navigation on nearby edges and crossing bridges. The managed
+CLI environment remains 0.1.27; externally configured CLIs are unchanged.
 
 ## Message brokers
 
@@ -177,7 +172,7 @@ generation uploads the model only when explicitly requested.
 ## Develop
 
 Run `make docker-build` to validate and package the extension in Docker. The
-installable file is `dist/service-architect-vscode-0.1.27.vsix`. The build copies
+installable file is `dist/service-architect-vscode-0.1.28.vsix`. The build copies
 the project into the image; it does not mount source directories. Set
 `DEPENDENCY_DOCKER_REGISTRY` and `NPM_CONFIG_REGISTRY` for mirrored base images
 and npm packages. For interactive development, run `npm run check` and press F5
@@ -187,7 +182,7 @@ in VS Code's Extension Development Host.
 `service_architect_vue3/embedded`; use `sa-python-dsl/scripts/sync_ide_assets.py`
 after building a new immutable UI version. Run it with `--check` before packaging to
 verify that both IDE plugins contain that exact build. If the viewer is built in a
-separate release checkout, pass `--source-dir /path/to/public/mcp-ui/0.1.11` to both
+separate release checkout, pass `--source-dir /path/to/public/mcp-ui/0.1.25` to both
 sync and check. Do not edit the bundles directly.
 
 ## SubStream calls from code (Go)
